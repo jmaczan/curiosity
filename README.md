@@ -1,2 +1,3 @@
 # mlfs
-Machine Learning From Scratch
+
+Machine Learning From Scratch in C
