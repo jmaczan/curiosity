@@ -6,12 +6,21 @@ struct Tensor
 {
     int *data;
     int size;
+    int *shape;
+    int ndim; // number of dimensions aka size of shape
 };
 
-struct Tensor tensor(int size)
+struct Tensor tensor(int *shape, int ndim)
 {
     struct Tensor t;
+    int size = 1;
+    for (int i = 0; i < ndim; i++)
+    {
+        size *= shape[i];
+    }
     t.size = size;
+    t.shape = shape;
+    t.ndim = ndim;
     t.data = (int *)calloc(size, sizeof(int));
     if (!t.data)
     {
@@ -47,10 +56,21 @@ struct Tensor add(struct Tensor a, struct Tensor b)
     return output;
 }
 
+struct Tensor view(struct Tensor t, int *view_shape, int view_shape_dim)
+{
+    if (t.ndim != view_shape_dim)
+    {
+        printf("Shape of view should have the same number of dimensions as tensor");
+        exit(1);
+    }
+
+    // starting with only first dimension
+}
+
 int main(int argc, char *argv[])
 {
-    int t1_size = 10;
-    struct Tensor t1 = tensor(t1_size);
+    int shape[] = {10};
+    struct Tensor t1 = tensor(shape, 1);
     t1.data[0] = 1;
     t1.data[1] = 2;
     t1.data[2] = 3;
