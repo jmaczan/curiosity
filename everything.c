@@ -64,7 +64,21 @@ struct Tensor view(struct Tensor t, int *view_shape, int view_shape_dim)
         exit(1);
     }
 
-    // starting with only first dimension
+    // example of tensor with shape [2, 2, 3] - so a 3 dimensional tensor
+    // [query]: [output] -- {index}
+    // [1, 1]: [3, 6, 2] -- {1...3}
+    // [1, 2]: [6, 8, 4] -- {4...6}
+
+    // [2, 1]: [1, 2, 3] -- {7..9}
+    // [2, 2]: [2, 4, 5] -- {10..12}
+
+    // [1, 1, 2] -- {2}
+    // [1, 2, 3] -- {6}
+
+    // now, I want to be able to retrieve nth element or row or column
+
+    // data is stored contigiously as an array, so I need a way to compute indices of items from element/row/column I want to retrieve
+    //
 }
 
 int main(int argc, char *argv[])
