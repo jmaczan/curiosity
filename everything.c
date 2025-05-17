@@ -35,6 +35,8 @@ void tensor_free(struct Tensor *t)
     free(t->data);
     t->data = NULL;
     t->size = 0;
+    t->shape = NULL;
+    t->ndim = 0;
 }
 
 struct Tensor add(struct Tensor a, struct Tensor b)
@@ -56,12 +58,19 @@ struct Tensor add(struct Tensor a, struct Tensor b)
     return output;
 }
 
+// for now it returns a new tensor, without reusing the underlying data
 struct Tensor view(struct Tensor t, int *view_shape, int view_shape_dim)
 {
-    if (t.ndim != view_shape_dim)
+    if (t.ndim > view_shape_dim)
     {
-        printf("Shape of view should have the same number of dimensions as tensor");
+        printf("Shape of view can't have more dimensions than the input tensor");
         exit(1);
+    }
+
+    struct Tensor output;
+
+    if (t.ndim == view_shape_dim)
+    {
     }
 
     // example of tensor with shape [2, 2, 3] - so a 3 dimensional tensor
