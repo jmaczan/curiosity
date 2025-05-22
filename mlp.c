@@ -35,6 +35,8 @@ int main() {
   float *biases_1 = malloc(HIDDEN_LAYER_DIM * sizeof(float));
   float *biases_2 = malloc(OUTPUT_DIM * sizeof(float));
 
+  // TODO: initialize weights and biases, ideally with some reasonable thing like Xavier
+
   int remaining_training_examples = MAX_TRAINING_EXAMPLES;
   while (remaining_training_examples > 0) {
     fgets(line, LINE_BUF_SIZE, f);
@@ -53,7 +55,25 @@ int main() {
       i++;
     }
 
+    // TODO: forward pass
+
+    // TODO: store intermediate values - pre-activations and activations
+
+    // TODO: backward pass
+
+    // TODO: loss and gradient descent
+
     // printf("%s", line);
     remaining_training_examples--;
   }
+
+  // TODO: store the weights and biases and make it loadable to the model
 }
+
+// much later TODO:
+// batching (SGD)
+// optimize
+// learning rate scheduler
+
+// much much later TODO:
+// hyper-optimize for a chosen chip architecture that I have access to
