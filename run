@@ -1,0 +1,11 @@
+#!/bin/bash
+if [[ -z "$2" ]] || [[ $2 == "gcc" ]]
+    then
+        echo "gcc"
+        gcc -O3 -o $1.o $1.c -lm && ./$1.o && rm $1.o
+else
+    echo "clang"
+    clang $1.c -o $1 && ./$1 && rm $1
+fi
+
+

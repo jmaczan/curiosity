@@ -64,21 +64,31 @@ struct Tensor view(struct Tensor t, int *view_shape, int view_shape_dim)
         exit(1);
     }
 
-    // example of tensor with shape [2, 2, 3] - so a 3 dimensional tensor
-    // [query]: [output] -- {index}
-    // [1, 1]: [3, 6, 2] -- {1...3}
-    // [1, 2]: [6, 8, 4] -- {4...6}
+    // example of tensor with shape [2, 2, 3] - so a 3 dimensional tensor: B, T, C
+    // [query]: [output] -- {index} 
+    // assuming 0-indexed queries and indices
+    // [a, b, c]
+    // [0, 0, 1]: 6 -- {1}: c
+    // [0, 1, 2]: 4 -- {5}: a*B + b*T + C
 
-    // [2, 1]: [1, 2, 3] -- {7..9}
-    // [2, 2]: [2, 4, 5] -- {10..12}
+    // [0, 0]: [3, 6, 2] -- {0...2}: a*B + b*T ... a*B+b*T+C (but C is 1-indexed, so perhaps C-1 here or decrease be 1 all items in shape?)
+    // [0, 1]: [6, 8, 4] -- {4...6}: b*C
 
-    // [1, 1, 2] -- {2}
-    // [1, 2, 3] -- {6}
+    // [1, 0]: [1, 2, 3] -- {7..9}
+    // [1, 1]: [2, 4, 5] -- {10..12} b*C*T
+
+
+    // [1]: [3, 6, 2, 6, 8, 4] or [[3, 6, 2], [6, 8, 4]] -- {1...6}
 
     // now, I want to be able to retrieve nth element or row or column
 
-    // data is stored contigiously as an array, so I need a way to compute indices of items from element/row/column I want to retrieve
-    //
+    // data is stored contiguously as an array, so I need a way to compute indices of items from element/row/column I want to retrieve
+    // [3, 6, 2, 6, 8, 4, 1, 2, 3, 2, 4, 5]
+
+    
+
+    // so these ^ are rather straighforward. how about more difficult scenarios, like getting for all elements first row and second column? so something like [all, 1, 2]?
+
 }
 
 int main(int argc, char *argv[])

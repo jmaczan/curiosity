@@ -20,3 +20,9 @@
  .       o  -+-  .          oo                 '       +~~                      
          +   |             '                             .                   *  
                                         +                                       
+
+```
+./run <filename> [gcc|clang]
+      - tensor
+      - mlp
+```
