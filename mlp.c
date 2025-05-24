@@ -43,17 +43,31 @@ void load_weights_and_biases(float *weights_1, int num_weights_1,
                              int num_biases_2) {
   char line[2000000]; // 1177084
   FILE *f = fopen("data/model_weights.csv", "r");
-
-  fgets(line, LINE_BUF_SIZE, f);
-  char *parameters = strtok(line, ",\n"); // TODO: why ",\n" instead of "\n"?
-
-  parameters = strtok(NULL, ",\n");
-  printf("%c \n", parameters[4]);
-  for (int i = 0; i < num_weights_1; i++) {
-    weights_1[i] = atoi(parameters);
+  if (!f) {
+    printf("Error: Could not open model_weights.csv\n");
+    return;
   }
 
+  fgets(line, 2000000, f);
+  char *parameters = strtok(line, ",\n");
+
+  parameters = strtok(NULL, ",\n");
+
+  int i = 0;
+  while (i < INPUT_DIM * HIDDEN_LAYER_DIM) {
+    parameters = strtok(NULL, ",\n");
+    weights_1[i] = atof(parameters); // there might be a bug here, it's
+                                      // possible I load label as first input
+    i++;
+  }
+  // for (int i = 0; i < num_weights_1; i++) {
+  //   weights_1[i] = atoi(parameters);
+  // }
+
   printf("%f \n", weights_1[0]);
+  printf("%f \n", weights_2[0]);
+
+  fclose(f);
 }
 
 void forward(float *weights_1, float *weights_2, float *biases_1,
@@ -134,6 +148,8 @@ void train(float *weights_1, float *weights_2, float *biases_1, float *biases_2,
     // printf("%s", line);
     samples--;
   }
+
+  fclose(f);
 }
 
 int main(int argc, char *argv[]) {
