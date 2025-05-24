@@ -94,6 +94,8 @@ int main() {
       activations_2[i] += biases_2[i];
     }
 
+
+    // softmax
     float denominator = 0;
 
     float exponents[OUTPUT_DIM];
@@ -107,8 +109,6 @@ int main() {
     for (int i = 0; i < OUTPUT_DIM; i++) {
       outputs[i] = exponents[i] / denominator;
     }
-
-    // softmax here I guess
 
     // TODO: backward pass
 
