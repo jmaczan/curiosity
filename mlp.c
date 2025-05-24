@@ -1,6 +1,8 @@
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 // Here's how learning emerges from C, loops and floats
 
@@ -23,9 +25,15 @@ void skip_csv_headers(FILE *f) {
     ;
 }
 
+float get_random_number() { return (double)rand() / (double)RAND_MAX; }
+
 // He initialization
-void initialize_weights(float *weights, int weights_length) {
-  // float scale_factor = 
+void initialize_weights(float *weights, int weights_length, int layer_size) {
+  float scale_factor = sqrtf(2.0 / layer_size);
+  srand(time(NULL));
+  for (int i = 0; i < weights_length; i++) {
+    weights[i] = get_random_number() * scale_factor;
+  }
 }
 
 // memory:
@@ -48,8 +56,9 @@ int main() {
   float *biases_1 = calloc(HIDDEN_LAYER_DIM, sizeof(float));
   float *biases_2 = calloc(OUTPUT_DIM, sizeof(float));
 
-  initialize_weights(weights_1, INPUT_DIM * HIDDEN_LAYER_DIM);
-  initialize_weights(weights_2, HIDDEN_LAYER_DIM * OUTPUT_DIM);
+  initialize_weights(weights_1, INPUT_DIM * HIDDEN_LAYER_DIM, INPUT_DIM);
+  initialize_weights(weights_2, HIDDEN_LAYER_DIM * OUTPUT_DIM,
+                     HIDDEN_LAYER_DIM);
 
   int samples = MAX_TRAINING_EXAMPLES;
   while (samples > 0) {
