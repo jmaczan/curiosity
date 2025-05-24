@@ -22,7 +22,7 @@
                                         +                                       
 
 ```
-./run <filename> [gcc|clang]
+./run <filename> <gcc|clang> <train|run>
       - tensor
       - mlp
 ```
