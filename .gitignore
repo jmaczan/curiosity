@@ -239,3 +239,4 @@ data_cache/
 rclone.conf*
 
 db_backups/
+.DS_Store

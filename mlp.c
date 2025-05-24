@@ -41,31 +41,36 @@ void load_weights_and_biases(float *weights_1, int num_weights_1,
                              float *weights_2, int num_weights_2,
                              float *biases_1, int num_biases_1, float *biases_2,
                              int num_biases_2) {
+  printf("t");
+
   char line[2000000]; // 1177084
+  printf("p");
   FILE *f = fopen("data/model_weights.csv", "r");
   if (!f) {
     printf("Error: Could not open model_weights.csv\n");
     return;
   }
+  printf("w");
 
   fgets(line, 2000000, f);
+  printf("a");
   char *parameters = strtok(line, ",\n");
+  printf("b");
 
   parameters = strtok(NULL, ",\n");
+  printf("c");
 
   int i = 0;
   while (i < INPUT_DIM * HIDDEN_LAYER_DIM) {
+    printf("x");
     parameters = strtok(NULL, ",\n");
-    weights_1[i] = atof(parameters); // there might be a bug here, it's
-                                      // possible I load label as first input
+    weights_1[i] = atof(parameters);
+    printf("%f \n", weights_1[i]);
     i++;
   }
-  // for (int i = 0; i < num_weights_1; i++) {
-  //   weights_1[i] = atoi(parameters);
-  // }
 
   printf("%f \n", weights_1[0]);
-  printf("%f \n", weights_2[0]);
+  printf("%f \n", weights_1[1]);
 
   fclose(f);
 }

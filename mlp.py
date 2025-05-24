@@ -37,7 +37,7 @@ x = Tensor(x)
 y = Tensor(y)
 
 with Tensor.train():
-    for i in range(300):
+    for i in range(3):
         optim.zero_grad()
         loss = model(x).sparse_categorical_crossentropy(y).backward()
         optim.step()
@@ -49,12 +49,18 @@ b1 = np.frombuffer(state_dict.get("b1").data(), dtype=np.float32)
 l2 = np.frombuffer(state_dict.get("l2").data(), dtype=np.float32)
 b2 = np.frombuffer(state_dict.get("b2").data(), dtype=np.float32)
 
-with open("data/model_weights.csv", mode="x") as csvfile:
+print(f"l1.size {l1.size}")
+
+with open("data/model_weights.csv", mode="w") as csvfile:
     writer = csv.writer(csvfile)
-    writer.writerow(l1)
-    writer.writerow(b1)
-    writer.writerow(l2)
-    writer.writerow(b2)
+    for i in range(l1.size):
+        writer.writerow([l1[i]])
+    for i in range(b1.size):
+        writer.writerow([b1[i]])
+    for i in range(l2.size):
+        writer.writerow([l2[i]])
+    for i in range(b2.size):
+        writer.writerow([b2[i]])
 
 with open("data/mnist_train.csv") as csvfile:
     reader = csv.reader(csvfile)
