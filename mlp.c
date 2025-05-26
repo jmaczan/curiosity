@@ -115,10 +115,12 @@ void forward(float *inputs, float *weights_1, float *weights_2, float *biases_1,
 
   float exponents[OUTPUT_DIM];
   float max_output = activations_2[0];
+  int max_output_id = 0;
 
   for (int i = 0; i < OUTPUT_DIM; i++) {
     if (activations_2[i] > max_output) {
       max_output = activations_2[i];
+      max_output_id = i;
     }
 
     exponents[i] = exp(activations_2[i]);
@@ -130,6 +132,7 @@ void forward(float *inputs, float *weights_1, float *weights_2, float *biases_1,
     outputs[i] = exponents[i] / denominator;
   }
   printf("max_output: %f", max_output);
+  printf("max_output max_output_id:: %f", outputs[max_output_id]);
 }
 
 void train(float *weights_1, float *weights_2, float *biases_1, float *biases_2,
@@ -201,7 +204,18 @@ int main(int argc, char *argv[]) {
       skip_csv_headers(f);
 
       int samples = MAX_TRAINING_EXAMPLES;
-      while (samples > 0) {
+      int index = 0;
+      int start_idx = 3000;
+      int end_idx = 3010;
+
+      while (index < end_idx) {
+        if (index < start_idx) {
+          index++;
+          fgets(line, LINE_BUF_SIZE, f);
+          char *token = strtok(line, ",\n"); // TODO: why ",\n" instead of "\n"?
+          continue;
+        }
+        
         fgets(line, LINE_BUF_SIZE, f);
         char *token = strtok(line, ",\n"); // TODO: why ",\n" instead of "\n"?
 
@@ -225,7 +239,7 @@ int main(int argc, char *argv[]) {
         // TODO: loss and gradient descent
 
         // printf("%s", line);
-        samples--;
+        index++;
       }
 
       fclose(f);
