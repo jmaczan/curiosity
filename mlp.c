@@ -10,7 +10,7 @@
 #include <time.h>
 
 #define LINE_BUF_SIZE 10000 // 1+784 * 4
-#define INPUT_DIM 784      // 28 x 28
+#define INPUT_DIM 784       // 28 x 28
 #define HIDDEN_LAYER_DIM 128
 #define OUTPUT_DIM 10
 #define MAX_TRAINING_EXAMPLES 3 // * 1000
@@ -103,12 +103,6 @@ void forward(float *inputs, float *weights_1, float *weights_2, float *biases_1,
   memset(activations_1, 0, HIDDEN_LAYER_DIM * sizeof(float));
   memset(activations_2, 0, OUTPUT_DIM * sizeof(float));
 
-  // Debug print first few weights_1:
-  // for (int i = 0; i < 10; i++) {
-  //   printf("%f ", weights_1[i]);
-  // }
-  // printf("\n");
-
   printf("Inputs: \n ");
   for (int i = 0; i < 784; i++) {
     printf("%f ", inputs[i]);
@@ -145,8 +139,7 @@ void forward(float *inputs, float *weights_1, float *weights_2, float *biases_1,
 
   for (int j = 0; j < OUTPUT_DIM; j++) {
     for (int i = 0; i < HIDDEN_LAYER_DIM; i++) {
-      activations_2[j] +=
-          weights_2[j + i * OUTPUT_DIM] * activations_1[i];
+      activations_2[j] += weights_2[j + i * OUTPUT_DIM] * activations_1[i];
     }
   }
 
@@ -203,7 +196,7 @@ void train(float *weights_1, float *weights_2, float *biases_1, float *biases_2,
   int samples = MAX_TRAINING_EXAMPLES;
   while (samples > 0) {
     fgets(line, LINE_BUF_SIZE, f);
-    char *token = strtok(line, ",\n"); // TODO: why ",\n" instead of "\n"?
+    char *token = strtok(line, ",\n");
 
     char label = token[0];
     float inputs[INPUT_DIM];
@@ -261,16 +254,12 @@ int main(int argc, char *argv[]) {
 
       while (index < end_idx) {
         fgets(line, LINE_BUF_SIZE, f);
-        char *token = strtok(line, ",\n"); // TODO: why ",\n" instead of "\n"?
+        char *token = strtok(line, ",\n");
 
         if (index < start_idx) {
           index++;
           continue;
         }
-
-        // fgets(line, LINE_BUF_SIZE, f);
-        // char *token = strtok(line, ",\n"); // TODO: why ",\n" instead of
-        // "\n"?
 
         char label = token[0];
         float inputs[INPUT_DIM];
@@ -279,9 +268,7 @@ int main(int argc, char *argv[]) {
         int i = 1;
         while (i < INPUT_DIM + 1) {
           token = strtok(NULL, ",\n");
-          inputs[i - 1] =
-              atof(token) / 255.0f; // there might be a bug here, it's
-                                    // possible I load label as first input
+          inputs[i - 1] = atof(token) / 255.0f;
           i++;
         }
 
@@ -295,7 +282,6 @@ int main(int argc, char *argv[]) {
             }
           }
           printf("\n");
-          // printf("%f ", inputs[i]);
         }
         printf("\n");
 
