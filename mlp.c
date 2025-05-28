@@ -98,8 +98,10 @@ void load_weights_and_biases(float *weights_1, float *weights_2,
   fclose(f);
 }
 
-void forward(float *inputs, float *weights_1, float *weights_2, float *biases_1,
-             float *biases_2, float *activations_1, float *activations_2) {
+// Forward pass. Returns id of highest output, which is a predicted class
+int forward(float *inputs, float *weights_1, float *weights_2, float *biases_1,
+            float *biases_2, float *activations_1, float *activations_2,
+            float *outputs) {
   memset(activations_1, 0, HIDDEN_LAYER_DIM * sizeof(float));
   memset(activations_2, 0, OUTPUT_DIM * sizeof(float));
 
@@ -174,16 +176,75 @@ void forward(float *inputs, float *weights_1, float *weights_2, float *biases_1,
     denominator += exponents[i];
   }
 
-  float outputs[OUTPUT_DIM];
   for (int i = 0; i < OUTPUT_DIM; i++) {
     outputs[i] = exponents[i] / denominator;
   }
 
-  printf("\nPredicted: %i \n\n", max_output_id);
+  printf("\nPredicted id %i (value %f) \n\n", max_output_id,
+         outputs[max_output_id]);
+  for (int i = 0; i < 10; i++) {
+    printf("%i: %f", i, outputs[i]);
+  }
+
+  return max_output_id;
+}
+
+void run(float *weights_1, float *weights_2, float *biases_1, float *biases_2,
+         float *activations_1, float *activations_2, float *outputs) {
+  load_weights_and_biases(weights_1, weights_2, biases_1, biases_2);
+  char line[LINE_BUF_SIZE];
+
+  FILE *f = fopen("data/mnist_train.csv", "r");
+
+  skip_csv_headers(f);
+
+  int index = 0;
+  int start_idx = 3000;
+  int end_idx = 3010;
+
+  while (index < end_idx) {
+    fgets(line, LINE_BUF_SIZE, f);
+    char *token = strtok(line, ",\n");
+
+    if (index < start_idx) {
+      index++;
+      continue;
+    }
+
+    int label = atoi(&token[0]);
+    float inputs[INPUT_DIM];
+    printf("label: %i, ", label);
+
+    int i = 1;
+    while (i < INPUT_DIM + 1) {
+      token = strtok(NULL, ",\n");
+      inputs[i - 1] = atof(token) / 255.0f;
+      i++;
+    }
+
+    printf("First few input pixels: \n");
+    for (int i = 0; i < 784; i += 28) {
+      for (int j = 0; j < 28; j++) {
+        if (inputs[i + j] == 0) {
+          printf("|");
+        } else {
+          printf("-");
+        }
+      }
+      printf("\n");
+    }
+    printf("\n");
+
+    forward(inputs, weights_1, weights_2, biases_1, biases_2, activations_1,
+            activations_2, outputs);
+    index++;
+  }
+
+  fclose(f);
 }
 
 void train(float *weights_1, float *weights_2, float *biases_1, float *biases_2,
-           float *activations_1, float *activations_2) {
+           float *activations_1, float *activations_2, float *outputs) {
   char line[LINE_BUF_SIZE];
   FILE *f = fopen("data/mnist_train.csv", "r");
 
@@ -204,13 +265,16 @@ void train(float *weights_1, float *weights_2, float *biases_1, float *biases_2,
     int i = 1;
     while (i < INPUT_DIM) {
       token = strtok(NULL, ",\n");
-      inputs[i] = atof(token) / 255.0f; // there might be a bug here, it's
-                                        // possible I load label as first input
+      inputs[i] = atof(token) / 255.0f;
       i++;
     }
 
-    forward(inputs, weights_1, weights_2, biases_1, biases_2, activations_1,
-            activations_2); // TODO get outputs
+    int max_output_id =
+        forward(inputs, weights_1, weights_2, biases_1, biases_2, activations_1,
+                activations_2, outputs);
+
+    // cross-entropy loss
+    float loss = -log(outputs[max_output_id]);
 
     // TODO: backward pass
 
@@ -226,79 +290,21 @@ void train(float *weights_1, float *weights_2, float *biases_1, float *biases_2,
 int main(int argc, char *argv[]) {
   float *weights_1 = malloc(INPUT_DIM * HIDDEN_LAYER_DIM * sizeof(float));
   float *weights_2 = malloc(HIDDEN_LAYER_DIM * OUTPUT_DIM * sizeof(float));
-
   float *biases_1 = calloc(HIDDEN_LAYER_DIM, sizeof(float));
   float *biases_2 = calloc(OUTPUT_DIM, sizeof(float));
-
   float *activations_1 = calloc(HIDDEN_LAYER_DIM, sizeof(float));
   float *activations_2 = calloc(OUTPUT_DIM, sizeof(float));
-
   float *inputs = calloc(INPUT_DIM, sizeof(float));
+  float *outputs = malloc(OUTPUT_DIM * sizeof(float));
 
   if (argc == 2) {
     if (strcmp(argv[1], "train") == 0) {
       train(weights_1, weights_2, biases_1, biases_2, activations_1,
-            activations_2);
+            activations_2, outputs);
     }
     if (strcmp(argv[1], "run") == 0) {
-      load_weights_and_biases(weights_1, weights_2, biases_1, biases_2);
-      char line[LINE_BUF_SIZE];
-
-      FILE *f = fopen("data/mnist_train.csv", "r");
-
-      skip_csv_headers(f);
-
-      int index = 0;
-      int start_idx = 3000;
-      int end_idx = 3010;
-
-      while (index < end_idx) {
-        fgets(line, LINE_BUF_SIZE, f);
-        char *token = strtok(line, ",\n");
-
-        if (index < start_idx) {
-          index++;
-          continue;
-        }
-
-        char label = token[0];
-        float inputs[INPUT_DIM];
-        printf("label: %c, ", label);
-
-        int i = 1;
-        while (i < INPUT_DIM + 1) {
-          token = strtok(NULL, ",\n");
-          inputs[i - 1] = atof(token) / 255.0f;
-          i++;
-        }
-
-        printf("First few input pixels: \n");
-        for (int i = 0; i < 784; i += 28) {
-          for (int j = 0; j < 28; j++) {
-            if (inputs[i + j] == 0) {
-              printf("|");
-            } else {
-              printf("-");
-            }
-          }
-          printf("\n");
-        }
-        printf("\n");
-
-        forward(inputs, weights_1, weights_2, biases_1, biases_2, activations_1,
-                activations_2); // TODO get outputs
-
-        // TODO: backward pass
-
-        // TODO: loss and gradient descent
-
-        // printf("%s", line);
-        index++;
-      }
-
-      fclose(f);
-      // forward(inputs, weights_1, weights_2, biases_1, biases_2,
-      // activations_1, activations_2);
+      run(weights_1, weights_2, biases_1, biases_2, activations_1,
+          activations_2, outputs);
     }
   }
 
@@ -309,6 +315,7 @@ int main(int argc, char *argv[]) {
   free(activations_1);
   free(activations_2);
   free(inputs);
+  free(outputs);
 
   return 0;
 }
