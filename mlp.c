@@ -9,7 +9,7 @@
 #include <string.h>
 #include <time.h>
 
-#define LINE_BUF_SIZE 3137 // 1+784 * 4
+#define LINE_BUF_SIZE 10000 // 1+784 * 4
 #define INPUT_DIM 784      // 28 x 28
 #define HIDDEN_LAYER_DIM 128
 #define OUTPUT_DIM 10
@@ -37,29 +37,23 @@ void initialize_weights(float *weights, int weights_length, int layer_size) {
   }
 }
 
-void load_weights_and_biases(float *weights_1, int num_weights_1,
-                             float *weights_2, int num_weights_2,
-                             float *biases_1, int num_biases_1, float *biases_2,
-                             int num_biases_2) {
+void load_weights_and_biases(float *weights_1, float *weights_2,
+                             float *biases_1, float *biases_2) {
   FILE *f = fopen("data/model_weights.csv", "r");
   if (!f) {
     printf("Error: Could not open model_weights.csv\n");
     return;
   }
 
+  printf("Loading weights...\n");
   for (int i = 0; i < INPUT_DIM * HIDDEN_LAYER_DIM; i++) {
     if (fscanf(f, "%f", &weights_1[i]) != 1) {
       printf("Error reading weights at index %d\n", i);
       fclose(f);
       return;
     }
-  }
-
-  for (int i = 0; i < HIDDEN_LAYER_DIM * OUTPUT_DIM; i++) {
-    if (fscanf(f, "%f", &weights_2[i]) != 1) {
-      printf("Error reading weights_2 at index %d\n", i);
-      fclose(f);
-      return;
+    if (i < 10) {
+      printf("Loaded weights_1[%d] = %f\n", i, weights_1[i]);
     }
   }
 
@@ -69,6 +63,22 @@ void load_weights_and_biases(float *weights_1, int num_weights_1,
       fclose(f);
       return;
     }
+
+    if (i < 10) {
+      printf("Loaded biases_1[%d] = %f\n", i, biases_1[i]);
+    }
+  }
+
+  for (int i = 0; i < HIDDEN_LAYER_DIM * OUTPUT_DIM; i++) {
+    if (fscanf(f, "%f", &weights_2[i]) != 1) {
+      printf("Error reading weights_2 at index %d\n", i);
+      fclose(f);
+      return;
+    }
+
+    if (i < 10) {
+      printf("Loaded weights_2[%d] = %f\n", i, weights_2[i]);
+    }
   }
 
   for (int i = 0; i < OUTPUT_DIM; i++) {
@@ -77,37 +87,81 @@ void load_weights_and_biases(float *weights_1, int num_weights_1,
       fclose(f);
       return;
     }
+
+    if (i < 10) {
+      printf("Loaded biases_2[%d] = %f\n", i, biases_2[i]);
+    }
   }
 
-  printf("Weights and biases loaded successfully");
+  printf("Weights and biases loaded successfully \n");
 
   fclose(f);
 }
 
 void forward(float *inputs, float *weights_1, float *weights_2, float *biases_1,
              float *biases_2, float *activations_1, float *activations_2) {
-  for (int i = 0; i < INPUT_DIM; i++) {
-    for (int j = 0; j < HIDDEN_LAYER_DIM; j++) {
-      activations_1[j] += weights_1[i * HIDDEN_LAYER_DIM + j] * inputs[i];
+  memset(activations_1, 0, HIDDEN_LAYER_DIM * sizeof(float));
+  memset(activations_2, 0, OUTPUT_DIM * sizeof(float));
+
+  // Debug print first few weights_1:
+  // for (int i = 0; i < 10; i++) {
+  //   printf("%f ", weights_1[i]);
+  // }
+  // printf("\n");
+
+  printf("Inputs: \n ");
+  for (int i = 0; i < 784; i++) {
+    printf("%f ", inputs[i]);
+  }
+
+  for (int j = 0; j < HIDDEN_LAYER_DIM; j++) {
+    for (int i = 0; i < INPUT_DIM; i++) {
+      activations_1[j] += weights_1[j + i * HIDDEN_LAYER_DIM] * inputs[i];
     }
   }
 
+  printf("\nAfter first linear: \n ");
+  for (int i = 0; i < 5; i++) {
+    printf("%f ", activations_1[i]);
+  }
   for (int i = 0; i < HIDDEN_LAYER_DIM; i++) {
     activations_1[i] += biases_1[i];
+  }
+
+  printf("\nAfter first bias: \n ");
+  for (int i = 0; i < 5; i++) {
+    printf("%f ", activations_1[i]);
+  }
+
+  for (int i = 0; i < HIDDEN_LAYER_DIM; i++) {
     activations_1[i] =
         RELU(activations_1[i]); // should I store pre-activations and
                                 // activations separately for backprop?
   }
+  printf("\nAfter relu: \n ");
+  for (int i = 0; i < 5; i++) {
+    printf("%f ", activations_1[i]);
+  }
 
-  for (int i = 0; i < HIDDEN_LAYER_DIM; i++) {
-    for (int j = 0; j < OUTPUT_DIM; j++) {
+  for (int j = 0; j < OUTPUT_DIM; j++) {
+    for (int i = 0; i < HIDDEN_LAYER_DIM; i++) {
       activations_2[j] +=
-          weights_2[i * HIDDEN_LAYER_DIM + j] * activations_1[i];
+          weights_2[j + i * OUTPUT_DIM] * activations_1[i];
     }
+  }
+
+  printf("\nAfter second linear: \n ");
+  for (int i = 0; i < 5; i++) {
+    printf("%f ", activations_2[i]);
   }
 
   for (int i = 0; i < OUTPUT_DIM; i++) {
     activations_2[i] += biases_2[i];
+  }
+
+  printf("\nAfter second bias: \n ");
+  for (int i = 0; i < 10; i++) {
+    printf("%f ", activations_2[i]);
   }
 
   // softmax
@@ -131,8 +185,8 @@ void forward(float *inputs, float *weights_1, float *weights_2, float *biases_1,
   for (int i = 0; i < OUTPUT_DIM; i++) {
     outputs[i] = exponents[i] / denominator;
   }
-  printf("max_output: %f", max_output);
-  printf("max_output max_output_id:: %f", outputs[max_output_id]);
+
+  printf("\nPredicted: %i \n\n", max_output_id);
 }
 
 void train(float *weights_1, float *weights_2, float *biases_1, float *biases_2,
@@ -154,10 +208,10 @@ void train(float *weights_1, float *weights_2, float *biases_1, float *biases_2,
     char label = token[0];
     float inputs[INPUT_DIM];
 
-    int i = 0;
+    int i = 1;
     while (i < INPUT_DIM) {
       token = strtok(NULL, ",\n");
-      inputs[i] = atoi(token) / 255.0f; // there might be a bug here, it's
+      inputs[i] = atof(token) / 255.0f; // there might be a bug here, it's
                                         // possible I load label as first input
       i++;
     }
@@ -194,42 +248,56 @@ int main(int argc, char *argv[]) {
             activations_2);
     }
     if (strcmp(argv[1], "run") == 0) {
-      load_weights_and_biases(weights_1, INPUT_DIM * HIDDEN_LAYER_DIM,
-                              weights_2, HIDDEN_LAYER_DIM * OUTPUT_DIM,
-                              biases_1, HIDDEN_LAYER_DIM, biases_2, OUTPUT_DIM);
+      load_weights_and_biases(weights_1, weights_2, biases_1, biases_2);
       char line[LINE_BUF_SIZE];
 
       FILE *f = fopen("data/mnist_train.csv", "r");
 
       skip_csv_headers(f);
 
-      int samples = MAX_TRAINING_EXAMPLES;
       int index = 0;
       int start_idx = 3000;
       int end_idx = 3010;
 
       while (index < end_idx) {
-        if (index < start_idx) {
-          index++;
-          fgets(line, LINE_BUF_SIZE, f);
-          char *token = strtok(line, ",\n"); // TODO: why ",\n" instead of "\n"?
-          continue;
-        }
-        
         fgets(line, LINE_BUF_SIZE, f);
         char *token = strtok(line, ",\n"); // TODO: why ",\n" instead of "\n"?
 
+        if (index < start_idx) {
+          index++;
+          continue;
+        }
+
+        // fgets(line, LINE_BUF_SIZE, f);
+        // char *token = strtok(line, ",\n"); // TODO: why ",\n" instead of
+        // "\n"?
+
         char label = token[0];
         float inputs[INPUT_DIM];
+        printf("label: %c, ", label);
 
-        int i = 0;
-        while (i < INPUT_DIM) {
+        int i = 1;
+        while (i < INPUT_DIM + 1) {
           token = strtok(NULL, ",\n");
-          inputs[i] =
-              atoi(token) / 255.0f; // there might be a bug here, it's
+          inputs[i - 1] =
+              atof(token) / 255.0f; // there might be a bug here, it's
                                     // possible I load label as first input
           i++;
         }
+
+        printf("First few input pixels: \n");
+        for (int i = 0; i < 784; i += 28) {
+          for (int j = 0; j < 28; j++) {
+            if (inputs[i + j] == 0) {
+              printf("|");
+            } else {
+              printf("-");
+            }
+          }
+          printf("\n");
+          // printf("%f ", inputs[i]);
+        }
+        printf("\n");
 
         forward(inputs, weights_1, weights_2, biases_1, biases_2, activations_1,
                 activations_2); // TODO get outputs
