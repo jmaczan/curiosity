@@ -2,52 +2,10 @@ from tinygrad import Tensor, nn
 import csv
 import numpy as np
 
-
-class MLP:
-    def __init__(self):
-        self.l1 = Tensor.kaiming_uniform(38, 10)
-        # self.l2 = Tensor.kaiming_uniform(3, 10)
-
-    def __call__(self, x: Tensor):
-        # First layer
-        with open("data/test.csv", mode="w") as csvfile:
-            writer = csv.writer(csvfile)
-            for i in range(120, 158): # analyze which positions in 784 most often have digits and pick these (contiguous) to train model on
-                t = np.frombuffer(x[0][i].data(), dtype=np.float32)
-                writer.writerow([t])
-        x = x.flatten(1).dot(self.l1)
-        # x = x + self.b1
-        # x = x.relu()
-
-        # Second layer
-        # x = x.dot(self.l2)
-        # x = x + self.b2
-        return x
-
-
-def debug_forward(self, x: Tensor):
-    # First layer
-    print(x.flatten(1).numpy())
-    x1 = x.flatten(1).dot(self.l1)
-    print("After first linear:", x1[0, :5].numpy())
-    return x1
-    # x2 = x1 #+ self.b1
-    # print("After first bias:", x2[0, :5].numpy())
-    # x3 = x2.relu()
-    # print("After relu:", x3[0, :5].numpy())
-
-    # # Second layer
-    # x4 = x3.dot(self.l2)
-    # print("After second linear:", x4[0, :5].numpy())
-    # x5 = x4 #+ self.b2
-    # print("Final activations:", x5[0].numpy())
-    # return x5
-
-
-model = MLP()
-optim = nn.optim.Adam([model.l1], lr=0.001)
-
-
+training_end_index = 10000
+eval_items = 1000
+epoch_num = 10000
+lr = 0.001
 # train
 with open("data/mnist_train.csv") as csvfile:
     reader = csv.reader(csvfile)
@@ -56,16 +14,49 @@ with open("data/mnist_train.csv") as csvfile:
     for index, row in enumerate(reader):
         if index == 0:
             continue
-        if index > 3000:
+        if index > training_end_index:
             break
         y.append(int(row[0]))
         x += [list(map(lambda x: float(x) / 255.0, row[1:]))]
 
-x = Tensor(x)
-y = Tensor(y)
+x = Tensor(x, device="nv")
+y = Tensor(y, device="nv")
+
+
+def find_important_pixels(x: Tensor, top_k: int = 38):
+    pixel_variance = x.var(axis=0)  # (784,)
+
+    _, indices = pixel_variance.topk(top_k)
+    return indices.numpy()
+
+
+important_pixels = find_important_pixels(x)
+print("Selected pixel indices:", important_pixels)
+with open("data/important_pixels.csv", mode="w") as csvfile:
+    writer = csv.writer(csvfile)
+    important_pixels.sort()
+    writer.writerow(important_pixels)
+    # for i in range(important_pixels):
+        # writer.writerow([important_pixels[i]])
+
+exit()
+
+class MLP:
+    def __init__(self, important_pixels):
+        self.pixel_indices = important_pixels
+        self.l1 = Tensor.kaiming_uniform(len(important_pixels), 10).to("nv")
+
+    def __call__(self, x: Tensor):
+        selected_pixels = x[:, self.pixel_indices.tolist()]
+        return selected_pixels.dot(self.l1)
+
+
+model = MLP(important_pixels)
+optim = nn.optim.Adam([model.l1], lr=lr)
+
 
 with Tensor.train():
-    for i in range(300):
+    for i in range(epoch_num):
         optim.zero_grad()
         loss = model(x).sparse_categorical_crossentropy(y).backward()
         optim.step()
@@ -77,13 +68,6 @@ print("Weights for first hidden neuron:", model.l1[:, 0].numpy())
 state_dict = nn.state.get_state_dict(model)
 l1 = np.frombuffer(state_dict.get("l1").data(), dtype=np.float32)
 print("First few weights from l1:", l1[:10])
-# print("l1 shape:", l1.reshape(784, 128).shape)
-# b1 = np.frombuffer(state_dict.get("b1").data(), dtype=np.float32)
-# print("First few weights from b1:", b1[:10])
-# l2 = np.frombuffer(state_dict.get("l2").data(), dtype=np.float16)
-# print("First few weights from l2:", l2[:10])
-# b2 = np.frombuffer(state_dict.get("b2").data(), dtype=np.float32)
-# print("First few weights from b2:", b2[:10])
 
 print(f"l1.size {l1.size}")
 
@@ -91,26 +75,29 @@ with open("data/model_weights.csv", mode="w") as csvfile:
     writer = csv.writer(csvfile)
     for i in range(l1.size):
         writer.writerow([l1[i]])
-    # for i in range(b1.size):
-        # writer.writerow([b1[i]])
-    # for i in range(l2.size):
-    #     writer.writerow([l2[i]])
-    # for i in range(b2.size):
-        # writer.writerow([b2[i]])
-
 # run
+total = 0
+correct = 0
 with open("data/mnist_train.csv") as csvfile:
     reader = csv.reader(csvfile)
     x = []
     y = []
     print("y_pred, y")
     for index, row in enumerate(reader):
-        if index == 0 or index <= 3000:
+        if index == 0 or index <= training_end_index:
             continue
-        if index > 3010:
+        if index > training_end_index + eval_items:
             break
 
-        x = Tensor([list(map(lambda x: float(x) / 255.0, row[1:]))])
-        debug_forward(model, x[0:1])
+        x = Tensor([list(map(lambda x: float(x) / 255.0, row[1:]))], device="nv")
         y_pred = model(x)
         print(np.argmax(np.frombuffer(y_pred.data(), dtype=np.float32)), int(row[0]))
+        total += 1
+        if int(row[0]) == int(
+            np.argmax(np.frombuffer(y_pred.data(), dtype=np.float32))
+        ):
+            correct += 1
+
+print(f"Accuracy: {float(correct / total)} ({correct}/{total})")
+
+# trained for ~5 minutes, validation accuracy 72%, not bad!
