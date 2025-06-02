@@ -276,6 +276,8 @@ void train(float *weights_1, float *weights_2, float *biases_1, float *biases_2,
     // cross-entropy loss
     float loss = -log(outputs[max_output_id]);
 
+    
+
     // TODO: backward pass
 
     // TODO: loss and gradient descent
