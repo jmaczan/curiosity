@@ -1,108 +1,329 @@
+// Here's how learning emerges from C, loops and floats
+
+// MNIST
+// MLP 784 (28*28 black/white pixels) -> 128 (hidden layer) -> 10 (digits)
+
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define HIDDEN_LAYER_DIM 38
+#include <time.h>
+
+#define LINE_BUF_SIZE 10000 // 1+784 * 4
+#define INPUT_DIM 784       // 28 x 28
+#define HIDDEN_LAYER_DIM 128
 #define OUTPUT_DIM 10
-int indices[] = {378, 406, 379, 627, 183, 626, 433, 461, 628, 491,
-                 437, 434, 409, 237, 382, 186, 270, 629, 630, 185,
-                 405, 464, 410, 603, 465, 347, 574, 242, 602, 212,
-                 271, 184, 438, 598, 597, 265, 241, 575};
-float weights[] = {
-    -2.6672025,   3.720505,     0.8505282,     1.3422484,    -2.636372,
-    1.1043103,    -0.85062176,  -1.9527773,    2.0882084,    -2.0669477,
-    -1.9970144,   -0.21372716,  0.2146659,     -1.2956586,   -1.0750304,
-    0.23306778,   1.5247775,    2.2329452,     -0.24254169,  -0.42507076,
-    -3.4590507,   1.0840492,    0.48826838,    1.3783659,    2.7700822,
-    -0.10787401,  1.7951994,    2.229322,      1.125063,     3.2726717,
-    -1.5354089,   0.5135133,    -1.3041809,    0.4596423,    1.9107249,
-    -0.021113567, 0.5247102,    1.3451024,     1.2648599,    -0.18901858,
-    0.15670182,   -0.13662411,  1.0900304,     0.075304985,  -2.0290594,
-    0.5559996,    1.7722821,    -1.671421,     0.16857196,   -0.2802445,
-    2.2605882,    -1.2435194,   -0.8918487,    2.1626651,    0.5216712,
-    -1.150574,    -2.5214248,   1.1753669,     -0.19523832,  -1.225619,
-    -0.85522246,  0.009453653,  2.5626512,     0.9391006,    2.4912908,
-    0.79103714,   -0.3947038,   -1.4987473,    0.23603283,   -0.42771423,
-    -3.4510646,   3.0006933,    1.7479815,     -2.1030834,   2.4005613,
-    -1.1996275,   2.6835163,    0.9865696,     1.7661105,    0.8949313,
-    0.46293148,   -0.009874889, 1.7970217,     0.9370289,    -3.1074765,
-    2.3901215,    -1.2066079,   0.6884785,     0.09888414,   1.3414234,
-    -3.129279,    1.808475,     1.1698684,     -1.0350524,   0.97296786,
-    0.9084082,    0.24815266,   2.2209098,     0.19738919,   0.47146922,
-    0.4953165,    1.6632518,    -0.113321014,  -1.0463276,   -2.856834,
-    -1.2667606,   0.6461808,    2.6304932,     -1.1182032,   0.8373631,
-    -3.5389519,   3.771464,     -1.1690717,    1.5927364,    -0.60831916,
-    -0.32481503,  -0.05749462,  0.124158874,   0.5569291,    0.15901493,
-    -2.1496778,   3.1064909,    -1.6585555,    -0.3047165,   3.8921661,
-    0.06065391,   -1.5706383,   -1.5012985,    0.5101539,    -0.35044825,
-    0.14510205,   -2.7277462,   -0.7490811,    -0.008372622, -1.1741576,
-    -0.3618046,   -0.89801985,  1.7106953,     0.019474238,  0.95222837,
-    -3.326622,    -7.640447,    2.454263,      0.6462615,    2.3461814,
-    0.5994974,    3.1578224,    1.5716813,     0.8478786,    4.0477533,
-    4.6614223,    -0.07343036,  1.0298262,     1.0608345,    -1.441081,
-    2.0768135,    0.0712113,    -1.0592607,    0.7938886,    -0.66810477,
-    0.6728168,    -4.465353,    -0.110544026,  0.056307282,  -0.55051476,
-    -0.6438397,   -0.12090356,  2.55908,       -1.9161041,   0.7331097,
-    3.2505188,    -0.23190694,  -1.634677,     -0.73333544,  0.37581107,
-    -0.6093021,   -0.72198635,  -0.98363197,   1.6680431,    -1.6548558,
-    -0.4885128,   0.49032712,   -2.1045966,    -0.36174142,  -0.32770047,
-    0.1879563,    0.115526006,  2.7294302,     -0.68176365,  0.4569969,
-    -3.8088655,   1.2503426,    -0.3842053,    -2.1139655,   2.89024,
-    -1.6782197,   2.39327,      0.26854658,    0.49508256,   1.0717609,
-    1.0208889,    1.7886094,    0.97579545,    2.4752734,    2.6047723,
-    2.7388146,    0.8524395,    -3.2444196,    2.5440962,    2.5698533,
-    0.92830884,   -2.508971,    -0.40163073,   -0.26395467,  1.3316804,
-    -1.0723085,   1.1779476,    0.048143625,   0.53330785,   0.99823904,
-    4.1303964,    -5.457758,    0.7242277,     2.607318,     -1.9204005,
-    0.4984263,    -0.8889726,   -1.215446,     -0.8853031,   -1.3118721,
-    -0.18124482,  1.862042,     1.5182985,     1.3359232,    -3.703761,
-    1.6838466,    -1.105195,    -3.5887713,    0.58946633,   -1.418345,
-    0.019129002,  -1.8491497,   0.0128269,     1.5187039,    1.3227947,
-    1.5698067,    -2.1378365,   -2.577171,     -0.61924356,  -0.44014728,
-    2.7666945,    -2.0989923,   -4.306275,     0.6750229,    3.612505,
-    3.0495708,    2.2476833,    0.016769279,   1.3172745,    2.0501678,
-    0.06294405,   0.6138867,    1.7376627,     0.070629604,  -4.1796055,
-    0.4161378,    0.5625004,    -2.4892912,    -0.8554248,   -2.2306647,
-    2.3575165,    3.503826,     1.8947155,     0.15111609,   -0.29006055,
-    1.5461718,    -2.6084342,   -1.965264,     0.59452146,   0.11614274,
-    -2.8630984,   -2.7229707,   -0.05253485,   -0.08450869,  4.3338275,
-    -1.2137616,   1.0176344,    -0.17159155,   -1.6579889,   1.4976182,
-    1.9259946,    0.24447091,   -0.63529146,   -1.132875,    -2.0914228,
-    -0.7161244,   -1.4965771,   0.5353338,     -2.1440215,   2.1077147,
-    2.8555048,    -1.1169809,   -0.24624713,   0.6701113,    0.3541894,
-    -0.49421996,  -2.610247,    1.5164909,     1.808757,     0.66415983,
-    0.9142718,    -2.0942097,   0.6006899,     2.061101,     -2.106996,
-    0.19241047,   -2.8827648,   -1.1749773,    1.1086155,    -1.4160063,
-    -2.2760894,   -6.7876673,   0.81548965,    -0.9459553,   3.6673932,
-    -0.5755814,   3.2018678,    3.3006163,     -0.8954571,   0.5199824,
-    0.107318796,  1.9816802,    2.8530078,     -1.1674395,   -3.5087247,
-    0.7204232,    2.6761053,    -2.5839975,    -0.3171214,   -0.6143761,
-    2.0938303,    1.2403626,    -0.30714193,   0.17384072,   -2.885749,
-    1.4368471,    -1.2894413,   -0.0119080385, 0.5354923,    -2.5436945,
-    1.3477795,    2.9984317,    0.25680757,    -1.5419604,   -0.7528505,
-    1.2336591,    0.7213073,    0.31101307,    0.7912528,    -0.16564405,
-    -1.8122624,   -2.1510758,   -0.08370475,   1.0632168,    -0.5383483,
-    -0.6681875,   -1.1410244,   2.68453,       -0.43609196,  -0.04490019,
-    -0.47960243,  -3.5981123,   -0.903435,     -0.3592408,   1.3803711,
-    -1.5311421,   1.096341,     2.1158495,     -0.13388321,  0.45479685};
-int main(int argc, char *argv[]) {
-  float *activations = calloc(OUTPUT_DIM, sizeof(float));
-  memset(activations, 0, OUTPUT_DIM * sizeof(float));
-  for (int j = 0; j < OUTPUT_DIM; j++) {
-    for (int i = 0; i < HIDDEN_LAYER_DIM; i++) {
-      activations[j] +=
-          weights[j + i * OUTPUT_DIM] * strtof(argv[indices[i]], NULL) / 255.0f;
+#define MAX_TRAINING_EXAMPLES 3 // * 1000
+
+#define RELU(i) (i > 0 ? i : 0)
+
+// skipping the first line with headers, because I decide to hardcode the file
+// structure
+void skip_csv_headers(FILE *f) {
+  int c;
+  while ((c = fgetc(f)) != EOF && c != '\n')
+    ;
+}
+
+// Random double number from range [0;1]
+float get_random_number() { return (double)rand() / (double)RAND_MAX; }
+
+// He initialization
+void initialize_weights(float *weights, int weights_length, int layer_size) {
+  float scale_factor = sqrtf(2.0 / layer_size);
+  srand(time(NULL));
+  for (int i = 0; i < weights_length; i++) {
+    weights[i] = get_random_number() * scale_factor;
+  }
+}
+
+void load_weights_and_biases(float *weights_1, float *weights_2,
+                             float *biases_1, float *biases_2) {
+  FILE *f = fopen("data/model_weights.csv", "r");
+  if (!f) {
+    printf("Error: Could not open model_weights.csv\n");
+    return;
+  }
+
+  printf("Loading weights...\n");
+  for (int i = 0; i < INPUT_DIM * HIDDEN_LAYER_DIM; i++) {
+    if (fscanf(f, "%f", &weights_1[i]) != 1) {
+      printf("Error reading weights at index %d\n", i);
+      fclose(f);
+      return;
+    }
+    if (i < 10) {
+      printf("Loaded weights_1[%d] = %f\n", i, weights_1[i]);
     }
   }
 
-  float max_output = activations[0];
-  int max_output_id = 0;
-  for (int i = 0; i < OUTPUT_DIM; i++) {
-    if (activations[i] > max_output) {
-      max_output = activations[i];
-      max_output_id = i;
+  for (int i = 0; i < HIDDEN_LAYER_DIM; i++) {
+    if (fscanf(f, "%f", &biases_1[i]) != 1) {
+      printf("Error reading biases_1 at index %d\n", i);
+      fclose(f);
+      return;
+    }
+
+    if (i < 10) {
+      printf("Loaded biases_1[%d] = %f\n", i, biases_1[i]);
     }
   }
-  free(activations);
-  printf("predicted: %i \n \n", max_output_id);
+
+  for (int i = 0; i < HIDDEN_LAYER_DIM * OUTPUT_DIM; i++) {
+    if (fscanf(f, "%f", &weights_2[i]) != 1) {
+      printf("Error reading weights_2 at index %d\n", i);
+      fclose(f);
+      return;
+    }
+
+    if (i < 10) {
+      printf("Loaded weights_2[%d] = %f\n", i, weights_2[i]);
+    }
+  }
+
+  for (int i = 0; i < OUTPUT_DIM; i++) {
+    if (fscanf(f, "%f", &biases_2[i]) != 1) {
+      printf("Error reading biases_2 at index %d\n", i);
+      fclose(f);
+      return;
+    }
+
+    if (i < 10) {
+      printf("Loaded biases_2[%d] = %f\n", i, biases_2[i]);
+    }
+  }
+
+  printf("Weights and biases loaded successfully \n");
+
+  fclose(f);
+}
+
+// Forward pass. Returns id of highest output, which is a predicted class
+int forward(float *inputs, float *weights_1, float *weights_2, float *biases_1,
+            float *biases_2, float *activations_1, float *activations_2,
+            float *outputs) {
+  memset(activations_1, 0, HIDDEN_LAYER_DIM * sizeof(float));
+  memset(activations_2, 0, OUTPUT_DIM * sizeof(float));
+
+  printf("Inputs: \n ");
+  for (int i = 0; i < 784; i++) {
+    printf("%f ", inputs[i]);
+  }
+
+  for (int j = 0; j < HIDDEN_LAYER_DIM; j++) {
+    for (int i = 0; i < INPUT_DIM; i++) {
+      activations_1[j] += weights_1[j + i * HIDDEN_LAYER_DIM] * inputs[i];
+    }
+  }
+
+  printf("\nAfter first linear: \n ");
+  for (int i = 0; i < 5; i++) {
+    printf("%f ", activations_1[i]);
+  }
+  for (int i = 0; i < HIDDEN_LAYER_DIM; i++) {
+    activations_1[i] += biases_1[i];
+  }
+
+  printf("\nAfter first bias: \n ");
+  for (int i = 0; i < 5; i++) {
+    printf("%f ", activations_1[i]);
+  }
+
+  for (int i = 0; i < HIDDEN_LAYER_DIM; i++) {
+    activations_1[i] =
+        RELU(activations_1[i]); // should I store pre-activations and
+                                // activations separately for backprop?
+  }
+  printf("\nAfter relu: \n ");
+  for (int i = 0; i < 5; i++) {
+    printf("%f ", activations_1[i]);
+  }
+
+  for (int j = 0; j < OUTPUT_DIM; j++) {
+    for (int i = 0; i < HIDDEN_LAYER_DIM; i++) {
+      activations_2[j] += weights_2[j + i * OUTPUT_DIM] * activations_1[i];
+    }
+  }
+
+  printf("\nAfter second linear: \n ");
+  for (int i = 0; i < 5; i++) {
+    printf("%f ", activations_2[i]);
+  }
+
+  for (int i = 0; i < OUTPUT_DIM; i++) {
+    activations_2[i] += biases_2[i];
+  }
+
+  printf("\nAfter second bias: \n ");
+  for (int i = 0; i < 10; i++) {
+    printf("%f ", activations_2[i]);
+  }
+
+  // softmax
+  float denominator = 0;
+
+  float exponents[OUTPUT_DIM];
+  float max_output = activations_2[0];
+  int max_output_id = 0;
+
+  for (int i = 0; i < OUTPUT_DIM; i++) {
+    if (activations_2[i] > max_output) {
+      max_output = activations_2[i];
+      max_output_id = i;
+    }
+
+    exponents[i] = exp(activations_2[i]);
+    denominator += exponents[i];
+  }
+
+  for (int i = 0; i < OUTPUT_DIM; i++) {
+    outputs[i] = exponents[i] / denominator;
+  }
+
+  printf("\nPredicted id %i (value %f) \n\n", max_output_id,
+         outputs[max_output_id]);
+  for (int i = 0; i < 10; i++) {
+    printf("%i: %f", i, outputs[i]);
+  }
+
+  return max_output_id;
+}
+
+void run(float *weights_1, float *weights_2, float *biases_1, float *biases_2,
+         float *activations_1, float *activations_2, float *outputs) {
+  load_weights_and_biases(weights_1, weights_2, biases_1, biases_2);
+  char line[LINE_BUF_SIZE];
+
+  FILE *f = fopen("data/mnist_train.csv", "r");
+
+  skip_csv_headers(f);
+
+  int index = 0;
+  int start_idx = 3000;
+  int end_idx = 3010;
+
+  while (index < end_idx) {
+    fgets(line, LINE_BUF_SIZE, f);
+    char *token = strtok(line, ",\n");
+
+    if (index < start_idx) {
+      index++;
+      continue;
+    }
+
+    int label = atoi(&token[0]);
+    float inputs[INPUT_DIM];
+    printf("label: %i, ", label);
+
+    int i = 1;
+    while (i < INPUT_DIM + 1) {
+      token = strtok(NULL, ",\n");
+      inputs[i - 1] = atof(token) / 255.0f;
+      i++;
+    }
+
+    printf("First few input pixels: \n");
+    for (int i = 0; i < 784; i += 28) {
+      for (int j = 0; j < 28; j++) {
+        if (inputs[i + j] == 0) {
+          printf("|");
+        } else {
+          printf("-");
+        }
+      }
+      printf("\n");
+    }
+    printf("\n");
+
+    forward(inputs, weights_1, weights_2, biases_1, biases_2, activations_1,
+            activations_2, outputs);
+    index++;
+  }
+
+  fclose(f);
+}
+
+void train(float *weights_1, float *weights_2, float *biases_1, float *biases_2,
+           float *activations_1, float *activations_2, float *outputs) {
+  char line[LINE_BUF_SIZE];
+  FILE *f = fopen("data/mnist_train.csv", "r");
+
+  skip_csv_headers(f);
+
+  initialize_weights(weights_1, INPUT_DIM * HIDDEN_LAYER_DIM, INPUT_DIM);
+  initialize_weights(weights_2, HIDDEN_LAYER_DIM * OUTPUT_DIM,
+                     HIDDEN_LAYER_DIM);
+
+  int samples = MAX_TRAINING_EXAMPLES;
+  while (samples > 0) {
+    fgets(line, LINE_BUF_SIZE, f);
+    char *token = strtok(line, ",\n");
+
+    char label = token[0];
+    float inputs[INPUT_DIM];
+
+    int i = 1;
+    while (i < INPUT_DIM) {
+      token = strtok(NULL, ",\n");
+      inputs[i] = atof(token) / 255.0f;
+      i++;
+    }
+
+    int max_output_id =
+        forward(inputs, weights_1, weights_2, biases_1, biases_2, activations_1,
+                activations_2, outputs);
+
+    // cross-entropy loss
+    float loss = -log(outputs[max_output_id]);
+
+    // TODO: backward pass
+
+    // TODO: loss and gradient descent
+
+    // printf("%s", line);
+    samples--;
+  }
+
+  fclose(f);
+}
+
+int main(int argc, char *argv[]) {
+  float *weights_1 = malloc(INPUT_DIM * HIDDEN_LAYER_DIM * sizeof(float));
+  float *weights_2 = malloc(HIDDEN_LAYER_DIM * OUTPUT_DIM * sizeof(float));
+  float *biases_1 = calloc(HIDDEN_LAYER_DIM, sizeof(float));
+  float *biases_2 = calloc(OUTPUT_DIM, sizeof(float));
+  float *activations_1 = calloc(HIDDEN_LAYER_DIM, sizeof(float));
+  float *activations_2 = calloc(OUTPUT_DIM, sizeof(float));
+  float *inputs = calloc(INPUT_DIM, sizeof(float));
+  float *outputs = malloc(OUTPUT_DIM * sizeof(float));
+
+  if (argc == 2) {
+    if (strcmp(argv[1], "train") == 0) {
+      train(weights_1, weights_2, biases_1, biases_2, activations_1,
+            activations_2, outputs);
+    }
+    if (strcmp(argv[1], "run") == 0) {
+      run(weights_1, weights_2, biases_1, biases_2, activations_1,
+          activations_2, outputs);
+    }
+  }
+
+  free(weights_1);
+  free(weights_2);
+  free(biases_1);
+  free(biases_2);
+  free(activations_1);
+  free(activations_2);
+  free(inputs);
+  free(outputs);
+
   return 0;
 }
+
+// much later TODO:
+// batching (SGD)
+// optimize
+// learning rate scheduler
+
+// much much later TODO:
+// hyper-optimize for a chosen chip architecture that I have access to
