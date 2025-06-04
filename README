@@ -1,26 +1,4 @@
-                             Low-level Deep Learning
-
-           .:'      .                              +*  '         '       .      
-       _.::'     '                                 *        *  '       o        
-      (_.'                              '     +     *               o           
-                        '            .    +                          *     +    
-           +   +                                            '                   
-       .         *          '+                                                  
-        o     +        .               '     +       '    *           +         
-   |            .'                   o                            +          |  
- --o--              +          o           '               *         .      -o- 
-   |            .         .              .                   .               | .
-      .                                            '           .-.          '   
-                                            '                 (   )           ' 
-        +~~                                                '   `-'      '       
-               .                                                   .  *         
-      .o                 '  '                                                   
- o                                      '                             '         
-   .         |                                    '            +                
- .       o  -+-  .          oo                 '       +~~                      
-         +   |             '                             .                   *  
-                                        +                                       
-
+learning deeper, leveling lower ₍˄·͈༝·͈˄₎◞ ̑̑
 ```
 ./run <filename> <gcc|clang> <train|run>
       - tensor
